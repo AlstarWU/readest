@@ -47,3 +47,4 @@ fastlane/report.xml
 # nix
 result*
 .playwright-mcp/
+apps/readest-app/~/.tauri/
