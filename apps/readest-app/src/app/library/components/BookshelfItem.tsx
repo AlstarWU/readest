@@ -1,17 +1,17 @@
 import clsx from 'clsx';
 import { useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAppRouter } from '@/hooks/useAppRouter';
 import { useLongPress } from '@/hooks/useLongPress';
 import { Menu, MenuItem } from '@tauri-apps/api/menu';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { eventDispatcher } from '@/utils/event';
 import { getOSPlatform } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
+import { navigateToReader, showReaderWindow } from '@/utils/nav';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
@@ -99,6 +99,7 @@ interface BookshelfItemProps {
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
+  handleLibraryNavigation: (targetGroup: string) => void;
   handleUpdateReadingStatus: (book: Book, status: ReadingStatus | undefined) => void;
 }
 
@@ -116,11 +117,11 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   handleBookDownload,
   handleSetSelectMode,
   handleShowDetailsBook,
+  handleLibraryNavigation,
   handleUpdateReadingStatus,
 }) => {
   const _ = useTranslation();
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const router = useAppRouter();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { updateBook } = useLibraryStore();
@@ -179,15 +180,11 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       if (isSelectMode) {
         toggleSelection(group.id);
       } else {
-        const params = new URLSearchParams(searchParams?.toString());
-        params.set('group', group.id);
-        setTimeout(() => {
-          navigateToLibrary(router, `${params.toString()}`);
-        }, 0);
+        handleLibraryNavigation(group.id);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isSelectMode, searchParams],
+    [isSelectMode, handleLibraryNavigation],
   );
 
   const bookContextMenuHandler = async (book: Book) => {
